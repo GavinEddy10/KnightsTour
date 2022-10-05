@@ -20,8 +20,7 @@ public class Main {
         System.out.println("START");
         initExhausted();
         ArrayList<Location> currentPossible;
-        //obtainStartLoc();
-        startLoc = new Location(1,1);
+        obtainStartLoc();
         System.out.println("Start Loc is " + startLoc);
 
         stack.push(startLoc);
@@ -35,38 +34,33 @@ public class Main {
         printBoard();
         System.out.println();
 
-        int count = 0;
+
         //num is stack.size
         while(stack.size() != rowL * colL && stack.size() != 0)
         {
-            ArrayList<Location> moves = getPossibleMoves(stack.get(stack.size()-1));//current top location on stack
-            Location nextMove = getNextMove(stack.get(stack.size()-1), moves);//current top location on stack valid next move
-            //if (nextMove == null) {//no loc to move too, backtrack
-                //nextMove = getNextMove(stack.get(stack.size()-2),)
-            //}
+            Location TopOfStack = stack.peek();
+            ArrayList<Location> moves = getPossibleMoves(TopOfStack);//current top location on stack
+            Location nextMove = getNextMove(TopOfStack, moves);//get next move, checks if in exhausted too, if null no moves
 
-            if (nextMove ==null) {
-                int stackBackCount = 2;
-                while (nextMove != null) {
-                    moves = getPossibleMoves(stack.get(stack.size()-stackBackCount));
-                    nextMove = getNextMove(stack.get(stack.size()-stackBackCount),moves);
-                }
+            if (nextMove == null) {//backtrack
+                System.out.print("BACKTRACK");
+                stack.pop();
+                board[TopOfStack.getRow()][TopOfStack.getCol()] = 0;
+                clearExhausted(TopOfStack);
                 System.out.println();
-                System.out.println("REACHEDDD");
-                break;
+                //break;
             }
-
-
-            stack.add(nextMove);
-            Location topOfStack = stack.get(stack.size()-1);//top of stack
-            addToExhausted(stack.get(stack.size()-2),nextMove);//one down from top of stack, top of stack
-            board[nextMove.getRow()][nextMove.getCol()] = stack.size();
-            printExhausedList(stack.get(stack.size()-2));
-            printPossibleMoveLocations(topOfStack);
-            printBoard();
-            System.out.println();
+            else {//no backtrack
+                stack.push(nextMove);
+                addToExhausted(TopOfStack, nextMove);//one down from top of stack, top of stack
+                board[nextMove.getRow()][nextMove.getCol()] = stack.size();
+                printExhausedList(TopOfStack);
+                printPossibleMoveLocations(stack.get(stack.size() - 1));
+                printBoard();
+                System.out.println();
+            }
         }
-
+        System.out.println("Finished Tour. ");
     }
 
     /*
@@ -104,7 +98,10 @@ public class Main {
     {
         for (int i = 0; i < rowL; i++) {
             for (int j = 0; j < colL; j++) {
-                System.out.print("[" + board[i][j] + "] ");
+                if (board[i][j] < 10)
+                    System.out.print("[" + board[i][j] + "]  ");
+                else
+                    System.out.print("[" + board[i][j] + "] ");
             }
             System.out.println();
         }
@@ -151,7 +148,8 @@ public class Main {
             return false;
 
         for (int i = 0; i < exhausted.get(index).size(); i++) {
-            if (exhausted.get(index).get(i) == dest)
+            Location loc = exhausted.get(index).get(i);
+            if (loc.getRow() == dest.getRow() && loc.getCol() == dest.getCol())
                 return true;
         }
         return false;
@@ -168,7 +166,14 @@ public class Main {
         if (list == null || list.size() == 0) {
             return null;
         }
-        return list.get(0);
+
+        //loc is top of stack
+        for (int i = 0; i < list.size(); i++) {
+            Location currentMove = list.get(i);
+            if (!inExhausted(loc,list.get(i)) && board[currentMove.getRow()][currentMove.getCol()] == 0) //not in exhausted, and board loc is 0
+                return currentMove;
+        }
+        return null;
     }
 
     /*
@@ -221,9 +226,23 @@ public class Main {
     /*
      * prompt for input and read in the start Location
      */
-    public static void obtainStartLoc()
-    {
+    public static void obtainStartLoc() {
+        Scanner input = new Scanner(System.in);
+        boolean running = true;
+        while (running) {
+            System.out.print("What starting Location do you want? R:");
+            int row = input.nextInt();
+            System.out.print("What starting column do you want? C: ");
+            int col = input.nextInt();
 
+            if (row < rowL && col < colL) {
+                startLoc = new Location(row, col);
+                break;
+            }
+            else {
+                System.out.println("NOT A VALID LOC");
+            }
+        }
     }
 
 }
